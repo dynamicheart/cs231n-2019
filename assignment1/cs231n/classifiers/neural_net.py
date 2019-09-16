@@ -80,7 +80,9 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        fc = np.dot(X, W1) + b1
+        h = np.maximum(0, fc)
+        scores = np.dot(h, W2) + b2
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -98,7 +100,12 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        scores -= scores.max(axis=1, keepdims=True)
+        softmax = np.exp(scores) / np.sum(np.exp(scores), axis=1, keepdims=True)
+        loss = np.sum(-np.log(softmax[np.arange(N), y]))
+
+        loss /= N
+        loss += reg * np.sum(W1 * W1) + reg * np.sum(W2 * W2)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -111,7 +118,40 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        dW1 = np.zeros_like(W1)
+        db1 = np.zeros_like(b1)
+        dW2 = np.zeros_like(W2)
+        db2 = np.zeros_like(b2)
+
+        softmax[np.arange(N), y] -= 1
+        # 计算W2的梯度
+        dW2 = np.dot(h.T, softmax)
+        # 计算b2的梯度
+        db2 = np.sum(softmax, axis=0)
+
+        # 计算scores的梯度
+        dscores = softmax
+        # 计算h的梯度 [N x H] = [N x C] * [C x H]
+        dh = np.dot(softmax, W2.T)
+        # 计算fc的梯度 [N x H] = [N x H] dot [N x H]
+        dfc = dh * (fc > 0)
+        # 计算W1的梯度 [D x H] = [D x N] * [N x H]
+        dW1 = np.dot(X.T, dfc)
+        # 计算b1的梯度 [H,]
+        db1 = np.sum(dfc, axis=0)
+
+        dW1 /= N
+        dW2 /= N
+        db1 /= N
+        db2 /= N
+
+        dW1 += reg * 2 * W1
+        dW2 += reg * 2 * W2
+
+        grads['W1'] = dW1
+        grads['b1'] = db1
+        grads['W2'] = dW2
+        grads['b2'] = db2
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -156,7 +196,9 @@ class TwoLayerNet(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            pass
+            mask = np.random.choice(num_train, batch_size)
+            X_batch = X[mask]
+            y_batch = y[mask]
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -172,7 +214,10 @@ class TwoLayerNet(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            pass
+            self.params['W1'] -= grads['W1'] * learning_rate
+            self.params['b1'] -= grads['b1'] * learning_rate
+            self.params['W2'] -= grads['W2'] * learning_rate
+            self.params['b2'] -= grads['b2'] * learning_rate
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -218,7 +263,7 @@ class TwoLayerNet(object):
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        y_pred = np.argmax(self.loss(X), axis=1)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
